@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life for Editor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide-react@0.294.0/dist/lucide-react.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .hidden { display: none; }
+        .animate-fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .animate-slide-up { animation: slideUp 0.5s ease-in-out; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        /* Custom scrollbar for chat */
+        .chat-messages::-webkit-scrollbar { width: 4px; }
+        .chat-messages::-webkit-scrollbar-thumb { background-color: #2dd4bf; border-radius: 20px; }
+        .chat-messages::-webkit-scrollbar-track { background-color: #f1f5f9; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div id="app" class="h-screen w-screen overflow-hidden">
+
+        <div id="splash-screen" class="flex flex-col items-center justify-center h-full bg-teal-500 text-white animate-fade-in">
+            <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-film"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18"/><path d="M3 7.5h4"/><path d="M3 12h18"/><path d="M3 16.5h4"/><path d="M17 3v18"/><path d="M17 7.5h4"/><path d="M17 16.5h4"/></svg>
+            <h1 class="text-4xl font-bold mt-4">Life for Editor</h1>
+            <p class="mt-2 text-lg">Connecting Creators and Clients</p>
+        </div>
+
+        <div id="auth-screen" class="hidden h-full flex items-center justify-center bg-gray-100 p-4">
+            <div class="w-full max-w-md bg-white rounded-lg shadow-xl p-8 animate-slide-up">
+                <div id="login-form">
+                    <h2 class="text-2xl font-bold text-center text-teal-600 mb-2">Welcome Back!</h2>
+                    <p class="text-center text-gray-500 mb-6">Sign in to continue</p>
+                    <form onsubmit="handleLogin(event)">
+                        <input id="login-email" type="email" placeholder="Email" class="w-full px-4 py-2 mb-4 border rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500" required>
+                        <input id="login-password" type="password" placeholder="Password" class="w-full px-4 py-2 mb-4 border rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500" required>
+                        <button type="submit" class="w-full bg-teal-500 text-white py-2 rounded-md hover:bg-teal-600 transition-colors">Login</button>
+                    </form>
+                    <p id="login-message" class="text-center text-sm mt-4 text-red-500 hidden"></p>
+                    <p class="text-center text-sm mt-4">
+                        Don't have an account? <a href="#" onclick="toggleAuthForms()" class="text-teal-500 font-semibold hover:underline">Register</a>
+                    </p>
+                </div>
+                <div id="register-form" class="hidden">
+                    <h2 class="text-2xl font-bold text-center text-teal-600 mb-2">Create Account</h2>
+                    <p class="text-center text-gray-500 mb-6">Get started with a new account</p>
+                    <form onsubmit="handleRegister(event)">
+                        <input id="register-email" type="email" placeholder="Email" class="w-full px-4 py-2 mb-4 border rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500" required>
+                        <input id="register-password" type="password" placeholder="Password" class="w-full px-4 py-2 mb-4 border rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500" required>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Register as:</label>
+                            <div class="flex items-center justify-around">
+                                <label class="flex items-center">
+                                    <input type="radio" name="role" value="client" class="form-radio text-teal-500" checked>
+                                    <span class="ml-2">Client</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="role" value="editor" class="form-radio text-teal-500">
+                                    <span class="ml-2">Editor</span>
+                                </label>
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full bg-teal-500 text-white py-2 rounded-md hover:bg-teal-600 transition-colors">Register</button>
+                    </form>
+                    <p class="text-center text-sm mt-4">
+                        Already have an account? <a href="#" onclick="toggleAuthForms()" class="text-teal-500 font-semibold hover:underline">Login</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="main-app" class="hidden h-full flex flex-col">
+            <main class="flex-grow overflow-y-auto pb-16">
+                 <div id="client-dashboard" class="hidden p-4">
+                    <h1 class="text-2xl font-bold mb-4">Home Feed</h1>
+                    <div id="client-home-feed" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        </div>
+                    <div id="no-client-posts-message" class="hidden text-center py-10">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto text-gray-400"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18"/><path d="m14.5 3-2.5 8 2.5 8"/><path d="M17 3v18"/><path d="M3 7.5h4"/><path d="M3 12h18"/><path d="M3 16.5h4"/><path d="M17 7.5h4"/><path d="M17 16.5h4"/></svg>
+                        <p class="mt-4 text-gray-500">Filhaal koi post available nahi hai.</p>
+                    </div>
+                </div>
+
+                <div id="editor-dashboard" class="hidden p-4">
+                    <h1 class="text-2xl font-bold mb-4">My Posts</h1>
+                    <div id="editor-posts-list" class="space-y-4"></div>
+                    <div id="no-editor-posts-message" class="hidden text-center py-10">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto text-gray-400"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18"/><path d="m14.5 3-2.5 8 2.5 8"/><path d="M17 3v18"/><path d="M3 7.5h4"/><path d="M3 12h18"/><path d="M3 16.5h4"/><path d="M17 7.5h4"/><path d="M17 16.5h4"/></svg>
+                        <p class="mt-4 text-gray-500">You haven't uploaded any posts yet.</p>
+                    </div>
+                    <div class="fixed bottom-20 right-4">
+                        <button onclick="openUploadModal()" class="bg-teal-500 text-white p-4 rounded-full shadow-lg hover:bg-teal-600 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="admin-dashboard" class="hidden p-4">
+                    <h1 class="text-2xl font-bold mb-4">Admin Panel</h1>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div onclick="openEditorApprovalsPage()" class="bg-white p-4 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow">
+                            <h3 class="font-bold text-lg text-teal-600">Editor Approvals</h3>
+                            <p class="text-gray-600">Editor applications manage karein.</p>
+                        </div>
+                         <div onclick="openReportsPage()" class="bg-white p-4 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow">
+                            <h3 class="font-bold text-lg text-teal-600">View Reports</h3>
+                            <p class="text-gray-600">User reports review karein.</p>
+                        </div>
+                        <div onclick="openPostsPage()" class="bg-white p-4 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow">
+                            <h3 class="font-bold text-lg text-teal-600">Manage Posts</h3>
+                            <p class="text-gray-600">Sabhi posts ko manage karein.</p>
+                        </div>
+                        <div onclick="openAnnouncementPage()" class="bg-white p-4 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow">
+                            <h3 class="font-bold text-lg text-teal-600">Send Announcement</h3>
+                            <p class="text-gray-600">Sabhi users ko message bhejein.</p>
+                        </div>
+                        <div onclick="openRatingsPage()" class="bg-white p-4 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow">
+                            <h3 class="font-bold text-lg text-teal-600">View Posts & Ratings</h3>
+                            <p class="text-gray-600">Posts dekhein aur unko rate karein.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="admin-editor-approvals-page" class="hidden p-4">
+                    <div class="flex items-center mb-4">
+                        <button onclick="closeAdminPage('admin-editor-approvals-page')" class="mr-4 p-2 rounded-full hover:bg-gray-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                        </button>
+                        <h1 class="text-2xl font-bold">Editor Approvals</h1>
+                    </div>
+                    <div id="editor-approvals-list" class="space-y-3"></div>
+                    <div id="no-editors-message" class="hidden text-center py-10">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto text-gray-400"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        <p class="mt-4 text-gray-500">Koi editor application available nahi hai.</p>
+                    </div>
+                </div>
+
+                <div id="admin-reports-page" class="hidden p-4">
+                    <div class="flex items-center mb-4">
+                         <button onclick="closeAdminPage('admin-reports-page')" class="mr-4 p-2 rounded-full hover:bg-gray-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                        </button>
+                        <h1 class="text-2xl font-bold">View Reports</h1>
+                    </div>
+                    <div id="reports-list" class="space-y-3"></div>
+                    <div id="no-reports-message" class="hidden text-center py-10">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto text-gray-400"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        <p class="mt-4 text-gray-500">Koi reports available nahi hain.</p>
+                    </div>
+                </div>
+
+                <div id="admin-posts-page" class="hidden p-4">
+                    <div class="flex items-center mb-4">
+                        <button onclick="closeAdminPage('admin-posts-page')" class="mr-4 p-2 rounded-full hover:bg-gray-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                        </button>
+                        <h1 class="text-2xl font-bold">Manage Posts</h1>
+                    </div>
+                    <div id="posts-list" class="space-y-3"></div>
+                    <div id="no-posts-message" class="hidden text-center py-10">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto text-gray-400"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18"/><path d="m14.5 3-2.5 8 2.5 8"/><path d="M17 3v18"/><path d="M3 7.5h4"/><path d="M3 12h18"/><path d="M3 16.5h4"/><path d="M17 7.5h4"/><path d="M17 16.5h4"/></svg>
+                        <p class="mt-4 text-gray-500">Platform par koi post nahi hai.</p>
+                    </div>
+                </div>
+
+                <div id="admin-announcement-page" class="hidden p-4">
+                    <div class="flex items-center mb-4">
+                        <button onclick="closeAdminPage('admin-announcement-page')" class="mr-4 p-2 rounded-full hover:bg-gray-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                        </button>
+                        <h1 class="text-2xl font-bold">Send Announcement</h1>
+                    </div>
+                    <form onsubmit="sendAnnouncement(event)" class="bg-white p-6 rounded-lg shadow-md">
+                        <label for="announcement-message" class="block text-gray-700 text-sm font-bold mb-2">Message:</label>
+                        <textarea id="announcement-message" rows="5" class="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="Yahan apna announcement type karein..."></textarea>
+                        <button type="submit" class="mt-4 w-full bg-teal-500 text-white py-2 rounded-md hover:bg-teal-600 transition-colors">Send</button>
+                    </form>
+                </div>
+                
+                <div id="admin-ratings-page" class="hidden p-4">
+                    <div class="flex items-center mb-4">
+                        <button onclick="closeAdminPage('admin-ratings-page')" class="mr-4 p-2 rounded-full hover:bg-gray-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                        </button>
+                        <h1 class="text-2xl font-bold">Manage Posts & Ratings</h1>
+                    </div>
+                    <div id="posts-ratings-list" class="space-y-4"></div>
+                    <div id="no-posts-ratings-message" class="hidden text-center py-10">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto text-gray-400"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18"/><path d="m14.5 3-2.5 8 2.5 8"/><path d="M17 3v18"/><path d="M3 7.5h4"/><path d="M3 12h18"/><path d="M3 16.5h4"/><path d="M17 7.5h4"/><path d="M17 16.5h4"/></svg>
+                        <p class="mt-4 text-gray-500">Filhaal koi post available nahi hai.</p>
+                    </div>
+                </div>
+
+                <div id="chat-page" class="hidden h-full flex flex-col">
+                    <div id="chat-list" class="p-4">
+                        <h1 class="text-2xl font-bold mb-4">Chats</h1>
+                        <div id="chat-list-container" class="space-y-2">
+                             </div>
+                        <div id="no-chats-message" class="hidden text-center py-10">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto text-gray-400"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                            <p class="mt-4 text-gray-500">Abhi tak koi chats nahi hain.</p>
+                        </div>
+                    </div>
+                    <div id="chat-conversation" class="hidden h-full flex flex-col bg-white">
+                         <div class="flex items-center p-3 border-b">
+                             <button onclick="closeChatConversation()" class="mr-2 p-2 rounded-full hover:bg-gray-200 lg:hidden">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                            </button>
+                             <img id="chat-editor-avatar" src="" class="w-10 h-10 rounded-full mr-3" alt="Editor avatar">
+                             <h3 id="chat-editor-name" class="font-semibold flex-grow">Editor Name</h3>
+                             <div class="flex items-center space-x-3">
+                                 <button class="text-gray-500 hover:text-teal-500"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-phone"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>
+                                 <button class="text-gray-500 hover:text-teal-500"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-video"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg></button>
+                             </div>
+                        </div>
+                        <div id="chat-messages-container" class="flex-grow p-4 overflow-y-auto chat-messages">
+                            </div>
+                        <div class="p-4 border-t flex items-center">
+                            <input id="chat-input" type="text" placeholder="Type a message..." class="flex-grow px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-teal-500" onkeydown="handleSendMessage(event)">
+                            <button onclick="handleFileUpload()" class="ml-2 p-2 rounded-full text-gray-500 hover:bg-gray-100 hover:text-teal-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-paperclip"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.59a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                            </button>
+                            <button onclick="handleSendMessage(event, true)" class="ml-2 p-2 rounded-full bg-teal-500 text-white hover:bg-teal-600">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="profile-page" class="hidden p-4">
+                     <h1 class="text-2xl font-bold mb-4">Profile</h1>
+                     <div class="text-center">
+                         <img src="https://placehold.co/128x128/a7f3d0/333333?text=P" class="w-32 h-32 rounded-full mx-auto mb-4" alt="Profile picture">
+                         <h2 id="profile-email" class="text-xl font-semibold">user@example.com</h2>
+                         <p id="profile-role" class="text-gray-500 capitalize">Role</p>
+                         <button onclick="openReportModal()" class="mt-4 w-full max-w-xs mx-auto bg-yellow-500 text-white py-2 rounded-md hover:bg-yellow-600 transition-colors">Report</button>
+                         <button onclick="handleLogout()" class="mt-2 w-full max-w-xs mx-auto bg-red-500 text-white py-2 rounded-md hover:bg-red-600 transition-colors">Logout</button>
+                     </div>
+                </div>
+            </main>
+
+            <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 bg-white border-t shadow-t-lg">
+                <div id="client-nav" class="hidden flex justify-around items-center h-16">
+                    <button onclick="switchTab('client-dashboard')" class="flex flex-col items-center justify-center text-teal-500 w-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                        <span class="text-xs">Home</span>
+                    </button>
+                    <button onclick="switchTab('chat-page')" class="flex flex-col items-center justify-center text-gray-500 w-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        <span class="text-xs">Chat</span>
+                    </button>
+                    <button onclick="switchTab('profile-page')" class="flex flex-col items-center justify-center text-gray-500 w-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <span class="text-xs">Profile</span>
+                    </button>
+                </div>
+                <div id="editor-nav" class="hidden flex justify-around items-center h-16">
+                    <button onclick="switchTab('editor-dashboard')" class="flex flex-col items-center justify-center text-teal-500 w-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-gallery-vertical-end"><path d="M4 4h16"/><path d="M4 8h16"/><rect width="18" height="12" x="3" y="10" rx="2"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="m16 14-.01.01"/></svg>
+                        <span class="text-xs">Posts</span>
+                    </button>
+                    <button onclick="switchTab('chat-page')" class="flex flex-col items-center justify-center text-gray-500 w-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        <span class="text-xs">Chat</span>
+                    </button>
+                    <button onclick="switchTab('profile-page')" class="flex flex-col items-center justify-center text-gray-500 w-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <span class="text-xs">Profile</span>
+                    </button>
+                </div>
+                 <div id="admin-nav" class="hidden flex justify-around items-center h-16">
+                    <button onclick="switchTab('admin-dashboard')" class="flex flex-col items-center justify-center text-teal-500 w-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layout-dashboard"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+                        <span class="text-xs">Dashboard</span>
+                    </button>
+                    <button onclick="switchTab('profile-page')" class="flex flex-col items-center justify-center text-gray-500 w-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <span class="text-xs">Profile</span>
+                    </button>
+                </div>
+            </nav>
+        </div>
+
+    <div id="upload-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm animate-slide-up">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold">Upload New Post</h3>
+                <button onclick="closeUploadModal()" class="text-gray-500 hover:text-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+            </div>
+            <form onsubmit="handleUpload(event)">
+                <div class="mb-4">
+                    <label for="post-title" class="block text-gray-700 text-sm font-bold mb-2">Title:</label>
+                    <input type="text" id="post-title" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="Video ka title likhein" required>
+                </div>
+                <div class="mb-4">
+                    <label for="post-video" class="block text-gray-700 text-sm font-bold mb-2">Video File (Max 1 min, 5GB):</label>
+                    <input type="file" id="post-video" accept="video/*" class="w-full text-gray-700" required>
+                </div>
+                 <p id="upload-error-message" class="text-red-500 text-sm mb-4 hidden"></p>
+                <button type="submit" class="w-full bg-teal-500 text-white py-2 rounded-md hover:bg-teal-600 transition-colors">Upload Post</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="video-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+        <div class="relative w-full max-w-2xl bg-black rounded-lg overflow-hidden">
+            <button onclick="closeVideoModal()" class="absolute top-2 right-2 text-white bg-gray-800 rounded-full p-1 hover:bg-gray-700 z-10">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+            <video id="video-player" controls class="w-full"></video>
+        </div>
+    </div>
+
+    <div id="chat-video-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+        <div class="relative w-full max-w-2xl bg-black rounded-lg overflow-hidden">
+            <button onclick="closeChatVideoModal()" class="absolute top-2 right-2 text-white bg-gray-800 rounded-full p-1 hover:bg-gray-700 z-10">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+            <video id="chat-video-player" controls class="w-full" ontimeupdate="updateSpeedDisplay()">
+                <source id="chat-video-source" src="" type="">
+            </video>
+            <div class="p-4 flex justify-between items-center bg-gray-900 text-white">
+                <div class="flex items-center space-x-2">
+                    <span id="speed-display" class="text-sm">1.0x</span>
+                    <select id="playback-speed-select" onchange="changePlaybackSpeed()" class="bg-gray-800 text-white rounded-md text-sm p-1">
+                        <option value="0.5">0.5x</option>
+                        <option value="0.75">0.75x</option>
+                        <option value="1.0" selected>1.0x</option>
+                        <option value="1.25">1.25x</option>
+                        <option value="1.5">1.5x</option>
+                        <option value="2.0">2.0x</option>
+                    </select>
+                </div>
+                <button onclick="downloadChatVideo()" class="bg-teal-500 text-white px-4 py-2 rounded-md hover:bg-teal-600 transition-colors">
+                    Download
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="report-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm animate-slide-up">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold">Report an Editor</h3>
+                <button onclick="closeReportModal()" class="text-gray-500 hover:text-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+            </div>
+            <form onsubmit="submitReport(event)">
+                <div class="mb-4">
+                    <label for="report-email" class="block text-gray-700 text-sm font-bold mb-2">Editor's Email:</label>
+                    <input type="email" id="report-email" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500" required>
+                </div>
+                <div class="mb-4">
+                    <label for="report-reason" class="block text-gray-700 text-sm font-bold mb-2">Reason:</label>
+                    <textarea id="report-reason" rows="3" class="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="Report ka karan batayein..." required></textarea>
+                </div>
+                <button type="submit" class="w-full bg-red-500 text-white py-2 rounded-md hover:bg-red-600 transition-colors">Submit Report</button>
+            </form>
+        </div>
+    </div>
+
+
+    <div id="popup-banner" class="hidden fixed bottom-20 right-4 bg-blue-500 text-white p-4 rounded-lg shadow-lg max-w-sm animate-slide-up">
+        <p id="popup-message">This is a notification!</p>
+    </div>
+     <input type="file" id="file-upload-input" class="hidden" onchange="handleFileSelection(event)">
+
+    <script>
+        // --- DOM Elements ---
+        const splashScreen = document.getElementById('splash-screen');
+        const authScreen = document.getElementById('auth-screen');
+        const mainApp = document.getElementById('main-app');
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const uploadModal = document.getElementById('upload-modal');
+        const videoModal = document.getElementById('video-modal');
+        const videoPlayer = document.getElementById('video-player');
+        const chatVideoModal = document.getElementById('chat-video-modal');
+        const chatVideoPlayer = document.getElementById('chat-video-player');
+        const chatVideoSource = document.getElementById('chat-video-source');
+        const playbackSpeedSelect = document.getElementById('playback-speed-select');
+        const speedDisplay = document.getElementById('speed-display');
+        const reportModal = document.getElementById('report-modal');
+        const loginMessage = document.getElementById('login-message');
+        const uploadErrorMessage = document.getElementById('upload-error-message');
+        const fileUploadInput = document.getElementById('file-upload-input');
+        
+        // Chat Elements
+        const chatListContainer = document.getElementById('chat-list-container');
+        const noChatsMessage = document.getElementById('no-chats-message');
+        const chatConversation = document.getElementById('chat-conversation');
+        const chatMessagesContainer = document.getElementById('chat-messages-container');
+        const chatEditorName = document.getElementById('chat-editor-name');
+        const chatEditorAvatar = document.getElementById('chat-editor-avatar');
+        const chatInput = document.getElementById('chat-input');
+
+        // Dashboards & Pages
+        const clientDashboard = document.getElementById('client-dashboard');
+        const editorDashboard = document.getElementById('editor-dashboard');
+        const adminDashboard = document.getElementById('admin-dashboard');
+        const adminEditorApprovalsPage = document.getElementById('admin-editor-approvals-page');
+        const adminReportsPage = document.getElementById('admin-reports-page');
+        const adminPostsPage = document.getElementById('admin-posts-page');
+        const adminAnnouncementPage = document.getElementById('admin-announcement-page');
+        const adminRatingsPage = document.getElementById('admin-ratings-page');
+        const chatPage = document.getElementById('chat-page');
+        const profilePage = document.getElementById('profile-page');
+        const postsRatingsList = document.getElementById('posts-ratings-list');
+        const noPostsRatingsMessage = document.getElementById('no-posts-ratings-message');
+        const clientHomeFeed = document.getElementById('client-home-feed');
+        const noClientPostsMessage = document.getElementById('no-client-posts-message');
+        const editorPostsList = document.getElementById('editor-posts-list');
+        const noEditorPostsMessage = document.getElementById('no-editor-posts-message');
+        
+        // Navigation
+        const clientNav = document.getElementById('client-nav');
+        const editorNav = document.getElementById('editor-nav');
+        const adminNav = document.getElementById('admin-nav');
+
+        // --- App State ---
+        let currentUser = null;
+        let currentTab = null;
+        let nextPostId = 101;
+        let nextReportId = 1;
+        let nextChatId = 1;
+        let activeChat = null; // Stores the email of the person the user is currently chatting with
+        let chatFileUrl = null; // Stores the URL of the file to be played/downloaded
+        const MOCK_ADMIN_EMAIL = "mdasifkhan6291@gmail.com";
+        const MOCK_ADMIN_PASS = "asif123";
+        const MAX_VIDEO_SIZE = 5 * 1024 * 1024 * 1024; // 5GB in bytes
+        const MAX_VIDEO_DURATION = 60; // 1 minute in seconds
+        
+        // Corrected MOCK data
+        let mockEditors = [
+            { email: 'jane.doe@example.com', status: 'approved', password: 'password123' },
+            { email: 'new.editor@example.com', status: 'pending', password: 'password123' },
+            { email: 'rejected.user@example.com', status: 'rejected', password: 'password123' },
+        ];
+        
+        // The mockPosts will be shared between all users
+        let mockPosts = [
+            { id: 101, title: 'Amazing Drone Footage', author: 'jane.doe@example.com', rating: 0, rated: false, videoSrc: 'https://www.w3schools.com/html/mov_bbb.mp4' },
+            { id: 102, title: 'Mountain Sunset', author: 'jane.doe@example.com', rating: 4, rated: true, videoSrc: 'https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4'}
+        ];
+
+        let mockReports = [
+            { id: 1, reportedBy: 'client1@example.com', reportedTo: 'jane.doe@example.com', reason: 'Inappropriate content in video.', status: 'pending'},
+            { id: 2, reportedBy: 'client2@example.com', reportedTo: 'jane.doe@example.com', reason: 'Copyright issue.', status: 'resolved'}
+        ];
+        
+        let mockChats = [
+             { id: 1, user1: "client1@example.com", user2: "jane.doe@example.com", messages: [
+                 { sender: "client1@example.com", text: "Hi Jane, I loved your work!", timestamp: "10:00 AM" },
+                 { sender: "jane.doe@example.com", text: "Thanks! What can I help you with?", timestamp: "10:05 AM" }
+             ]}
+        ];
+
+        // --- App Initialization ---
+        window.onload = () => {
+            setTimeout(() => {
+                splashScreen.classList.add('hidden');
+                authScreen.classList.remove('hidden');
+            }, 2000); // Show splash for 2 seconds
+        };
+
+        // --- Authentication Logic ---
+        function toggleAuthForms() {
+            loginForm.classList.toggle('hidden');
+            registerForm.classList.toggle('hidden');
+            loginMessage.classList.add('hidden');
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            // Clear previous login message
+            loginMessage.classList.add('hidden');
+
+            // Admin Login Check
+            if (email.toLowerCase() === MOCK_ADMIN_EMAIL && password === MOCK_ADMIN_PASS) {
+                currentUser = { email: email, role: 'admin' };
+                showPopup("Admin ke roop mein login kiya.", "success");
+                initializeAppForUser();
+                return;
+            }
+
+            // Editor Login Check
+            const editor = mockEditors.find(u => u.email === email && u.password === password);
+            if (editor) {
+                if (editor.status === 'pending') {
+                    loginMessage.textContent = "Wait checking your account";
+                    loginMessage.classList.remove('hidden');
+                    return;
+                }
+                if (editor.status === 'rejected') {
+                    loginMessage.textContent = "Your account was rejected. Please contact support.";
+                    loginMessage.classList.remove('hidden');
+                    return;
+                }
+                currentUser = { email: editor.email, role: 'editor' };
+                showPopup(`Editor ke roop mein login kiya: ${email}`, "success");
+                initializeAppForUser();
+                return;
+            }
+            
+            // Fallback to Client Login
+            currentUser = { email: email, role: 'client' };
+            showPopup(`Client ke roop mein login kiya: ${email}`, "success");
+            initializeAppForUser();
+        }
+
+        function handleRegister(event) {
+            event.preventDefault();
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            const role = document.querySelector('input[name="role"]:checked').value;
+            
+            if (role === 'editor') {
+                const existingEditor = mockEditors.find(e => e.email === email);
+                if (existingEditor) {
+                     showPopup("Yeh email pehle se hi registered hai.", "error");
+                     return;
+                }
+                mockEditors.push({ email: email, status: 'pending', password: password });
+                showPopup("Wait checking your account", "info");
+            } else { // Client
+                showPopup(`Client account ban gaya: ${email}. Ab aap login kar sakte hain.`);
+            }
+            
+            toggleAuthForms();
+        }
+        
+        function handleLogout() {
+            currentUser = null;
+            currentTab = null;
+
+            mainApp.classList.add('hidden');
+            authScreen.classList.remove('hidden');
+            
+            const allPages = [clientDashboard, editorDashboard, adminDashboard, adminEditorApprovalsPage, adminReportsPage, adminPostsPage, adminAnnouncementPage, adminRatingsPage, chatPage, profilePage];
+            allPages.forEach(el => el.classList.add('hidden'));
+
+            const allNavs = [clientNav, editorNav, adminNav];
+            allNavs.forEach(el => el.classList.add('hidden'));
+        }
+
+        // --- Main App Logic ---
+        function initializeAppForUser() {
+            if (!currentUser) return;
+
+            authScreen.classList.add('hidden');
+            mainApp.classList.remove('hidden');
+
+            document.getElementById('profile-email').textContent = currentUser.email;
+            document.getElementById('profile-role').textContent = currentUser.role;
+
+            switch (currentUser.role) {
+                case 'admin':
+                    adminNav.classList.remove('hidden');
+                    switchTab('admin-dashboard');
+                    break;
+                case 'editor':
+                    editorNav.classList.remove('hidden');
+                    switchTab('editor-dashboard');
+                    renderEditorPosts();
+                    renderChatList();
+                    break;
+                case 'client':
+                    clientNav.classList.remove('hidden');
+                    switchTab('client-dashboard');
+                    renderClientPosts();
+                    renderChatList();
+                    break;
+            }
+        }
+
+        function switchTab(pageId) {
+            if (currentTab) {
+                document.getElementById(currentTab).classList.add('hidden');
+            }
+            document.getElementById(pageId).classList.remove('hidden');
+            currentTab = pageId;
+
+            // Update nav button colors
+            document.querySelectorAll('#bottom-nav button').forEach(button => {
+                button.classList.remove('text-teal-500');
+                button.classList.add('text-gray-500');
+            });
+            const activeNavButton = document.querySelector(`#bottom-nav button[onclick="switchTab('${pageId}')"]`);
+            if (activeNavButton) {
+                activeNavButton.classList.remove('text-gray-500');
+                activeNavButton.classList.add('text-teal-500');
+            }
+        }
+
+        function showPopup(message, type = 'success') {
+            const banner = document.getElementById('popup-banner');
+            const msgEl = document.getElementById('popup-message');
+
+            banner.classList.remove('bg-blue-500', 'bg-red-500', 'bg-green-500');
+            if (type === 'success') {
+                banner.classList.add('bg-green-500');
+            } else if (type === 'error') {
+                banner.classList.add('bg-red-500');
+            } else {
+                banner.classList.add('bg-blue-500');
+            }
+            msgEl.textContent = message;
+            banner.classList.remove('hidden');
+            setTimeout(() => {
+                banner.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Admin functions
+        function openEditorApprovalsPage() {
+            switchTab('admin-editor-approvals-page');
+            renderEditorApprovals();
+        }
+        function openReportsPage() {
+            switchTab('admin-reports-page');
+            renderReports();
+        }
+        function openPostsPage() {
+            switchTab('admin-posts-page');
+            renderPosts();
+        }
+        function openAnnouncementPage() {
+            switchTab('admin-announcement-page');
+        }
+        function openRatingsPage() {
+            switchTab('admin-ratings-page');
+            renderPostsForRatings();
+        }
+
+        function closeAdminPage(pageId) {
+            document.getElementById(pageId).classList.add('hidden');
+            adminDashboard.classList.remove('hidden');
+        }
+
+        function renderEditorApprovals() {
+            const list = document.getElementById('editor-approvals-list');
+            list.innerHTML = '';
+            const pendingEditors = mockEditors.filter(e => e.status === 'pending');
+            if (pendingEditors.length === 0) {
+                document.getElementById('no-editors-message').classList.remove('hidden');
+                return;
+            }
+            document.getElementById('no-editors-message').classList.add('hidden');
+            pendingEditors.forEach(editor => {
+                const item = document.createElement('div');
+                item.className = 'bg-white p-4 rounded-lg shadow-md flex justify-between items-center';
+                item.innerHTML = `
+                    <div>
+                        <p class="font-semibold">${editor.email}</p>
+                        <span class="text-sm text-yellow-500">Pending</span>
+                    </div>
+                    <div>
+                        <button onclick="approveEditor('${editor.email}')" class="bg-green-500 text-white px-3 py-1 rounded-md text-sm hover:bg-green-600">Approve</button>
+                        <button onclick="rejectEditor('${editor.email}')" class="bg-red-500 text-white px-3 py-1 rounded-md text-sm hover:bg-red-600">Reject</button>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function approveEditor(email) {
+            const editor = mockEditors.find(e => e.email === email);
+            if (editor) {
+                editor.status = 'approved';
+                showPopup(`${email} ko editor ke roop mein approve kar diya gaya hai.`, 'success');
+                renderEditorApprovals();
+            }
+        }
+
+        function rejectEditor(email) {
+            const editor = mockEditors.find(e => e.email === email);
+            if (editor) {
+                editor.status = 'rejected';
+                showPopup(`${email} ko reject kar diya gaya hai.`, 'error');
+                renderEditorApprovals();
+            }
+        }
+
+        function renderReports() {
+            const list = document.getElementById('reports-list');
+            list.innerHTML = '';
+            if (mockReports.length === 0) {
+                document.getElementById('no-reports-message').classList.remove('hidden');
+                return;
+            }
+            document.getElementById('no-reports-message').classList.add('hidden');
+            mockReports.forEach(report => {
+                const item = document.createElement('div');
+                item.className = 'bg-white p-4 rounded-lg shadow-md';
+                item.innerHTML = `
+                    <p class="font-semibold">Report ID: ${report.id}</p>
+                    <p class="text-gray-600 text-sm">By: ${report.reportedBy}</p>
+                    <p class="text-gray-600 text-sm">To: ${report.reportedTo}</p>
+                    <p class="mt-2">${report.reason}</p>
+                    <span class="text-xs font-semibold mt-2 inline-block capitalize text-${report.status === 'pending' ? 'yellow' : 'green'}-500">${report.status}</span>
+                    ${report.status === 'pending' ? `<button onclick="resolveReport(${report.id})" class="ml-2 bg-teal-500 text-white px-2 py-1 rounded-md text-xs hover:bg-teal-600">Resolve</button>` : ''}
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function resolveReport(reportId) {
+            const report = mockReports.find(r => r.id === reportId);
+            if (report) {
+                report.status = 'resolved';
+                showPopup(`Report #${reportId} ko resolve kar diya gaya hai.`, 'success');
+                renderReports();
+            }
+        }
+
+        function renderPosts() {
+            const list = document.getElementById('posts-list');
+            list.innerHTML = '';
+            if (mockPosts.length === 0) {
+                document.getElementById('no-posts-message').classList.remove('hidden');
+                return;
+            }
+            document.getElementById('no-posts-message').classList.add('hidden');
+            mockPosts.forEach(post => {
+                const item = document.createElement('div');
+                item.className = 'bg-white p-4 rounded-lg shadow-md flex justify-between items-center';
+                item.innerHTML = `
+                    <div>
+                        <p class="font-semibold">${post.title}</p>
+                        <p class="text-gray-600 text-sm">By: ${post.author}</p>
+                    </div>
+                    <button onclick="deletePost(${post.id})" class="bg-red-500 text-white px-3 py-1 rounded-md text-sm hover:bg-red-600">Delete</button>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function deletePost(postId) {
+            mockPosts = mockPosts.filter(p => p.id !== postId);
+            showPopup(`Post #${postId} delete kar di gayi hai.`, 'success');
+            renderPosts();
+            renderClientPosts();
+            renderEditorPosts();
+        }
+
+        function sendAnnouncement(event) {
+            event.preventDefault();
+            const message = document.getElementById('announcement-message').value;
+            if (message.trim()) {
+                showPopup(`Announcement bheja gaya: "${message}"`, 'success');
+                document.getElementById('announcement-message').value = '';
+            }
+        }
+        
+        // New ratings functions
+        function renderPostsForRatings() {
+            postsRatingsList.innerHTML = '';
+            const postsWithRatings = mockPosts;
+
+            if (postsWithRatings.length === 0) {
+                noPostsRatingsMessage.classList.remove('hidden');
+            } else {
+                noPostsRatingsMessage.classList.add('hidden');
+                postsWithRatings.forEach(post => {
+                    const postCard = document.createElement('div');
+                    postCard.className = 'bg-gray-50 p-4 rounded-lg shadow-sm';
+                    postCard.innerHTML = `
+                        <h3 class="font-bold text-lg">${post.title}</h3>
+                        <p class="text-gray-600 text-sm">By: ${post.author}</p>
+                        <div class="mt-2">
+                            <p class="text-sm font-semibold">Admin Rating:</p>
+                            <div class="flex items-center mt-1" id="rating-${post.id}">
+                                ${[1, 2, 3, 4, 5].map(star => `
+                                    <svg data-post-id="${post.id}" data-rating="${star}" onclick="ratePost(${post.id}, ${star})" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="${star <= post.rating ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="cursor-pointer text-yellow-400"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                    postsRatingsList.appendChild(postCard);
+                });
+            }
+        }
+
+        function ratePost(postId, rating) {
+            const post = mockPosts.find(p => p.id === postId);
+            if (post) {
+                post.rating = rating;
+                post.rated = true;
+                showPopup(`Post "${post.title}" ko ${rating} stars diye gaye!`, 'success');
+                renderPostsForRatings(); // Update the view
+                renderClientPosts(); // Update the client view
+            }
+        }
+
+        // New editor upload functions
+        function openUploadModal() {
+            uploadModal.classList.remove('hidden');
+            uploadErrorMessage.classList.add('hidden'); // Clear previous errors
+        }
+
+        function closeUploadModal() {
+            uploadModal.classList.add('hidden');
+        }
+
+        function handleUpload(event) {
+            event.preventDefault();
+            const title = document.getElementById('post-title').value;
+            const videoFile = document.getElementById('post-video').files[0];
+            uploadErrorMessage.classList.add('hidden'); // Clear previous errors
+
+            if (!title || !videoFile) {
+                uploadErrorMessage.textContent = "Please provide a title and a video file.";
+                uploadErrorMessage.classList.remove('hidden');
+                return;
+            }
+
+            // Check video size
+            if (videoFile.size > MAX_VIDEO_SIZE) {
+                uploadErrorMessage.textContent = "Video size exceeds 5GB.";
+                uploadErrorMessage.classList.remove('hidden');
+                return;
+            }
+            
+            // Check video duration
+            const video = document.createElement('video');
+            video.preload = 'metadata';
+            video.onloadedmetadata = () => {
+                if (video.duration > MAX_VIDEO_DURATION) {
+                    uploadErrorMessage.textContent = "Video should not be longer than 1 minute.";
+                    uploadErrorMessage.classList.remove('hidden');
+                } else {
+                    const newPost = {
+                        id: nextPostId++,
+                        title: title,
+                        author: currentUser.email,
+                        rating: 0,
+                        rated: false,
+                        videoSrc: URL.createObjectURL(videoFile)
+                    };
+                    mockPosts.unshift(newPost);
+                    showPopup(`"${title}" successfully uploaded!`, 'success');
+                    closeUploadModal();
+                    renderEditorPosts();
+                    renderClientPosts();
+                    document.getElementById('post-title').value = '';
+                    document.getElementById('post-video').value = '';
+                }
+            };
+            video.src = URL.createObjectURL(videoFile);
+        }
+
+        function renderEditorPosts() {
+            editorPostsList.innerHTML = '';
+            const myPosts = mockPosts.filter(p => p.author === currentUser.email);
+            if (myPosts.length === 0) {
+                noEditorPostsMessage.classList.remove('hidden');
+            } else {
+                noEditorPostsMessage.classList.add('hidden');
+                myPosts.forEach(post => {
+                    const postCard = document.createElement('div');
+                    postCard.className = 'bg-white p-4 rounded-lg shadow-md flex items-center justify-between';
+                    postCard.innerHTML = `
+                        <div>
+                            <p class="font-semibold">${post.title}</p>
+                            <div class="flex items-center text-sm">
+                                <span class="text-gray-600">Admin Rating: ${post.rating}</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="text-yellow-400 ml-1"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                            </div>
+                        </div>
+                        <button onclick="deletePost(${post.id})" class="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                        </button>
+                    `;
+                    editorPostsList.appendChild(postCard);
+                });
+            }
+        }
+
+        function renderClientPosts() {
+            clientHomeFeed.innerHTML = '';
+            if (mockPosts.length === 0) {
+                noClientPostsMessage.classList.remove('hidden');
+            } else {
+                noClientPostsMessage.classList.add('hidden');
+                mockPosts.forEach(post => {
+                    const postCard = document.createElement('div');
+                    postCard.className = 'bg-white rounded-lg shadow-md overflow-hidden';
+                    postCard.innerHTML = `
+                        <div class="relative w-full h-48 bg-gray-200 cursor-pointer" onclick="openVideoModal('${post.videoSrc}')">
+                            <img src="https://placehold.co/600x400/14b8a6/ffffff?text=${post.title.replace(/\s/g, '+')}" alt="Post thumbnail" class="w-full h-full object-cover">
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="white" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-play-circle"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <h3 class="font-bold text-lg">${post.title}</h3>
+                            <div class="flex items-center mt-2">
+                                <img src="https://placehold.co/40x40/a7f3d0/333333?text=E" class="w-8 h-8 rounded-full mr-2" alt="Editor avatar">
+                                <div>
+                                    <p class="text-sm font-semibold">${post.author}</p>
+                                    <div class="flex items-center text-xs text-gray-500">
+                                        <span>${post.rating.toFixed(1)}</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="text-yellow-400 w-4 h-4"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                                    </div>
+                                </div>
+                            </div>
+                            <button onclick="hireEditor('${post.author}')" class="mt-4 w-full bg-teal-500 text-white py-2 rounded-md hover:bg-teal-600 transition-colors">Hire Editor</button>
+                        </div>
+                    `;
+                    clientHomeFeed.appendChild(postCard);
+                });
+            }
+        }
+        
+        // Chat functions
+        function renderChatList() {
+            chatListContainer.innerHTML = '';
+            
+            // Filter chats for the current user
+            const userChats = mockChats.filter(chat => chat.user1 === currentUser.email || chat.user2 === currentUser.email);
+
+            if (userChats.length === 0) {
+                noChatsMessage.classList.remove('hidden');
+                return;
+            } else {
+                noChatsMessage.classList.add('hidden');
+            }
+
+            userChats.forEach(chat => {
+                const otherUser = chat.user1 === currentUser.email ? chat.user2 : chat.user1;
+                const latestMessage = chat.messages[chat.messages.length - 1];
+                const lastMessageText = latestMessage ? (latestMessage.type === 'file' ? `[File: ${latestMessage.name}]` : latestMessage.text) : 'No messages yet.';
+                
+                const chatItem = document.createElement('div');
+                chatItem.className = 'flex items-center p-2 rounded-lg hover:bg-gray-100 cursor-pointer';
+                chatItem.setAttribute('onclick', `openChat('${otherUser}')`);
+                chatItem.innerHTML = `
+                    <img src="https://placehold.co/48x48/a7f3d0/333333?text=${otherUser[0].toUpperCase()}" class="w-12 h-12 rounded-full mr-4" alt="User avatar">
+                    <div class="flex-grow">
+                        <p class="font-semibold">${otherUser}</p>
+                        <p class="text-sm text-gray-500 truncate">${lastMessageText}</p>
+                    </div>
+                    <span class="text-xs text-gray-400">${latestMessage ? latestMessage.timestamp : ''}</span>
+                `;
+                chatListContainer.appendChild(chatItem);
+            });
+        }
+
+        function openChat(otherUserEmail) {
+            activeChat = otherUserEmail;
+            chatEditorName.textContent = otherUserEmail;
+            chatEditorAvatar.src = `https://placehold.co/40x40/a7f3d0/333333?text=${otherUserEmail[0].toUpperCase()}`;
+            
+            chatListContainer.parentElement.classList.add('hidden');
+            chatConversation.classList.remove('hidden');
+            renderChatMessages();
+        }
+
+        function closeChatConversation() {
+            chatConversation.classList.add('hidden');
+            chatListContainer.parentElement.classList.remove('hidden');
+        }
+
+        function renderChatMessages() {
+            chatMessagesContainer.innerHTML = '';
+            const chat = mockChats.find(c => (c.user1 === currentUser.email && c.user2 === activeChat) || (c.user1 === activeChat && c.user2 === currentUser.email));
+            
+            if (!chat) return;
+
+            chat.messages.forEach(msg => {
+                const isSender = msg.sender === currentUser.email;
+                const messageBubble = document.createElement('div');
+                messageBubble.className = `flex mb-2 ${isSender ? 'justify-end' : 'justify-start'}`;
+                
+                if (msg.type === 'file') {
+                    // Check if the file is a video
+                    const isVideo = msg.fileType.startsWith('video');
+                    const fileHtml = `
+                        <div class="max-w-[75%] px-4 py-2 rounded-lg bg-gray-200 text-gray-800 cursor-pointer hover:bg-gray-300 transition-colors" onclick="openChatVideoModal('${msg.url}', '${msg.fileType}')">
+                            <div class="flex items-center space-x-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-video"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="m10 14.5 5 2.5-5 2.5v-5z"/></svg>
+                                <span class="font-semibold">${msg.name}</span>
+                            </div>
+                            <span class="text-xs opacity-75 float-right mt-1">${msg.timestamp}</span>
+                        </div>
+                    `;
+                     messageBubble.innerHTML = fileHtml;
+                } else {
+                    messageBubble.innerHTML = `
+                        <div class="max-w-[75%] px-4 py-2 rounded-lg ${isSender ? 'bg-teal-500 text-white' : 'bg-gray-200 text-gray-800'}">
+                            <p>${msg.text}</p>
+                            <span class="text-xs opacity-75 float-right mt-1">${msg.timestamp}</span>
+                        </div>
+                    `;
+                }
+                chatMessagesContainer.appendChild(messageBubble);
+            });
+            chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+        }
+        
+        function handleSendMessage(event, isButton = false) {
+            if (event.key === 'Enter' || isButton) {
+                const messageText = chatInput.value.trim();
+                if (messageText) {
+                    const chat = mockChats.find(c => (c.user1 === currentUser.email && c.user2 === activeChat) || (c.user1 === activeChat && c.user2 === currentUser.email));
+                    if (chat) {
+                        const now = new Date();
+                        const timestamp = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        chat.messages.push({
+                            sender: currentUser.email,
+                            text: messageText,
+                            timestamp: timestamp,
+                            type: 'text'
+                        });
+                        chatInput.value = '';
+                        renderChatMessages();
+                        renderChatList(); // Update the last message in the list
+                    }
+                }
+            }
+        }
+        
+        // Main function to hire an editor and start a chat
+        function hireEditor(editorEmail) {
+            if (currentUser.role !== 'client') {
+                showPopup("Wrong email", "error");
+                return;
+            }
+
+            // Check if a chat with this editor already exists
+            const existingChat = mockChats.find(chat =>
+                (chat.user1 === currentUser.email && chat.user2 === editorEmail) ||
+                (chat.user1 === editorEmail && chat.user2 === currentUser.email)
+            );
+
+            if (!existingChat) {
+                const newChat = {
+                    id: nextChatId++,
+                    user1: currentUser.email,
+                    user2: editorEmail,
+                    messages: []
+                };
+                mockChats.push(newChat);
+                showPopup(`Chat started with ${editorEmail}!`, "success");
+            } else {
+                showPopup("Chat already exists!", "info");
+            }
+
+            switchTab('chat-page');
+            renderChatList();
+            openChat(editorEmail);
+        }
+        
+        // File Upload Functions
+        function handleFileUpload() {
+            fileUploadInput.click();
+        }
+
+        function handleFileSelection(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const url = URL.createObjectURL(file);
+                const chat = mockChats.find(c => (c.user1 === currentUser.email && c.user2 === activeChat) || (c.user1 === activeChat && c.user2 === currentUser.email));
+                 if (chat) {
+                    const now = new Date();
+                    const timestamp = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    chat.messages.push({
+                        sender: currentUser.email,
+                        text: `[File: ${file.name}]`,
+                        timestamp: timestamp,
+                        type: 'file',
+                        name: file.name,
+                        url: url,
+                        fileType: file.type
+                    });
+                    renderChatMessages();
+                    renderChatList();
+                }
+            }
+        }
+
+        // New video playback functions
+        function openVideoModal(videoSrc) {
+            videoPlayer.src = videoSrc;
+            videoModal.classList.remove('hidden');
+            videoPlayer.play();
+        }
+
+        function closeVideoModal() {
+            videoPlayer.pause();
+            videoPlayer.currentTime = 0;
+            videoModal.classList.add('hidden');
+        }
+        
+        // New Chat Video Playback Functions
+        function openChatVideoModal(videoSrc, fileType) {
+            chatFileUrl = videoSrc;
+            chatVideoSource.src = videoSrc;
+            chatVideoSource.type = fileType;
+            chatVideoPlayer.load();
+            chatVideoPlayer.play();
+            chatVideoModal.classList.remove('hidden');
+            
+            // Reset speed to 1.0x
+            playbackSpeedSelect.value = "1.0";
+            chatVideoPlayer.playbackRate = 1.0;
+            speedDisplay.textContent = "1.0x";
+        }
+        
+        function closeChatVideoModal() {
+            chatVideoPlayer.pause();
+            chatVideoPlayer.currentTime = 0;
+            chatVideoModal.classList.add('hidden');
+        }
+        
+        function changePlaybackSpeed() {
+            const speed = parseFloat(playbackSpeedSelect.value);
+            chatVideoPlayer.playbackRate = speed;
+            speedDisplay.textContent = `${speed.toFixed(2)}x`;
+        }
+        
+        function updateSpeedDisplay() {
+            // This function is for dynamic display if the video player changes speed on its own,
+            // but in this case, we control it with the select dropdown.
+        }
+
+        function downloadChatVideo() {
+            if (chatFileUrl) {
+                const a = document.createElement('a');
+                a.href = chatFileUrl;
+                a.download = 'video_from_chat.mp4'; // You can get the real filename from the message object
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                showPopup("Download started!", "success");
+            }
+        }
+
+
+        // New report functions
+        function openReportModal() {
+            reportModal.classList.remove('hidden');
+        }
+
+        function closeReportModal() {
+            reportModal.classList.add('hidden');
+        }
+
+        function submitReport(event) {
+            event.preventDefault();
+            const reportedTo = document.getElementById('report-email').value;
+            const reason = document.getElementById('report-reason').value;
+
+            // Simple check for valid email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(reportedTo)) {
+                showPopup("Wrong email", "error");
+                return;
+            }
+            
+            const newReport = {
+                id: nextReportId++,
+                reportedBy: currentUser.email,
+                reportedTo: reportedTo,
+                reason: reason,
+                status: 'pending'
+            };
+            mockReports.push(newReport);
+
+            showPopup("Report submitted successfully!", "success");
+            closeReportModal();
+            document.getElementById('report-email').value = '';
+            document.getElementById('report-reason').value = '';
+        }
+
+    </script>
+</body>
+</html>
